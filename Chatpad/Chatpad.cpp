@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2011 Cliff L. Biffle, all rights reserved.
+ * Fixed, 6 May 2019 by Evan Allen
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -23,7 +24,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 #include "Chatpad.h"
-#include "wiring.h"
+#include "wiring_private.h"
 #include "HardwareSerial.h"
 
 #include <avr/pgmspace.h>
@@ -54,6 +55,7 @@ void Chatpad::poll() {
   if (_serial->available() >= 8) {
     for (int i = 0; i < 8; i++) {
       _buffer[i] = _serial->read();
+	  if (_buffer[0] != 0xA5 && _buffer[0] != 0xB4) i--; //if it gets off by one it will keep throwing out bytes until it gets to the start of another message
     }
 
     // We expect "status report" packets beginning with 0xA5, but don't know
@@ -65,11 +67,13 @@ void Chatpad::poll() {
     if (_buffer[0] != 0xB4) {
       Serial.print("Unexpected packet type: ");
       Serial.println(_buffer[0], HEX);
+	  delay(100); //this makes the arduino micro programmable, fast serial communication locks it up
       return;
     }
     if (_buffer[1] != 0xC5) {
       Serial.print("Unexpected second byte: ");
       Serial.println(_buffer[1], HEX);
+	  delay(100); //this makes the arduino micro programmable, fast serial communication locks it up
       return;
     }
 
